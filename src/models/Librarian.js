@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Joi from "joi";
 
 const librarianSchema = new mongoose.Schema({
     username:{
@@ -26,24 +25,25 @@ const librarianSchema = new mongoose.Schema({
     status:{
         type:Number,
         default: 1,
-      },
-    user_Type:{
-        type: String,
     },
-      
+    created_at:{
+        type: Date,
+        default: Date.now()
+      }
     },
     {timestamps: true});
 
     const Librarian = mongoose.model('Librarian', librarianSchema)
+    export { Librarian }
 
-    function validateLibrarian(librarian){
-        const schema = Joi.object({
-            username: Joi.string().min(3).max(200),
-            password: Joi.string().min(6).max(200),
-            email:Joi.string().email().min(5).max(255),
-            user_Type:Joi.string(),
-        })
-        return schema.validate(librarian)
-    }
+    // function validateLibrarian(librarian){
+    //     const schema = Joi.object({
+    //         username: Joi.string().min(3).max(200),
+    //         password: Joi.string().min(6).max(200),
+    //         email:Joi.string().email().min(5).max(255),
+    //         user_Type:Joi.string(),
+    //     })
+    //     return schema.validate(librarian)
+    // }
 
-    export {Librarian, validateLibrarian }
+    

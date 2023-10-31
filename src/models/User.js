@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Joi, { string } from "joi";
 
 const userSchema = new mongoose.Schema({
     username:{
@@ -27,23 +26,24 @@ const userSchema = new mongoose.Schema({
         type:Number,
         default: 1,
       },
-      user_Type:{
-        type: String,
-      },
-      
+    created_at:{
+        type: Date,
+        default: Date.now()
+      }
     },
     {timestamps: true});
 
     const User = mongoose.model('User', userSchema)
+    export {User}
 
-    function validateUser(user){
-        const schema = Joi.object({
-            username: Joi.string().min(3).max(200).required(),
-            email:Joi.string().email().min(5).max(255).required(),
-            password: Joi.string().min(6).max(200).required(),
-            user_Type:Joi.string()
-        })
-        return schema.validate(user)
-    }
+    // function validateUser(user){
+    //     const schema = Joi.object({
+    //         username: Joi.string().min(3).max(200).required(),
+    //         email:Joi.string().email().min(5).max(255).required(),
+    //         password: Joi.string().min(6).max(200).required(),
+    //         user_Type:Joi.string()
+    //     })
+    //     return schema.validate(user)
+    // }
 
-    export {User, validateUser}
+    

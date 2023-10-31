@@ -1,8 +1,8 @@
-import { Admin, validateAdmin } from "../models/Admin";
-import { Librarian, validateLibrarian } from "../models/Librarian";
-import { Library, validateLibrary } from "../models/Library";
-import { User, validateUser } from "../models/User";
-import { Book, validateBook } from "../models/Books";
+import { Admin } from "../models/Admin";
+import { Librarian } from "../models/Librarian";
+import { Library } from "../models/Library";
+import { User } from "../models/User";
+import { Book } from "../models/Books";
 import { sign } from "jsonwebtoken";
 import bcrypt from 'bcrypt'
 import { successResponse, errorResponse } from "../middleware/response";
@@ -12,29 +12,18 @@ config()
 
 export const registerAdmin = async(req, res) =>{
     try{
-      const {error, value} = validateAdmin(req.body)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-      const{ username, email, password, user_Type} = value
+      const{ username, email, password} = req.body
       const existingAdmin = await Admin.findOne({username})
-  
       if(existingAdmin){
         return errorResponse(res, 401, 'Admin Already Exists')
       }
-  
       const hashedPassword = await bcrypt.hash(password, 10)
-  
       const newAdmin = new Admin({
         username,
         email,
         password: hashedPassword,
-        user_Type,
       })
-      console.log(newAdmin)
-  
       await newAdmin.save()
-  
       successResponse(res, 200, 'Admin registered successfully')
     }catch(err){
       errorResponse (res,500,"Internal Server Error")
@@ -43,40 +32,69 @@ export const registerAdmin = async(req, res) =>{
 
 export const loginAdmin = async(req, res) => {
     try{
-      const {error, value} = validateAdmin(req.body)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-      const {username, email, password} = value
-  
-      const admin = await Admin.findOne({username, email})
-  
+      const {email, password} = req.body
+      const admin = await Admin.findOne({email})
       if(!admin){
         return errorResponse (res, 401, "Authentication failed")
       }
-  
       const passwordMatch = await bcrypt.compare(password, admin.password)
       if(!passwordMatch){
         return errorResponse(res, 401, "Invalid Password")
       }
-  
-      const token = sign({username: admin.username, user_Type: admin.user_Type}, process.env.SECRET_KEY, {expiresIn:'1d'})
+      const token = sign({objectId: admin._id, username: admin.username}, process.env.SECRET_KEY, {expiresIn:'1d'})
       successResponse(res, 200, ({token}))
     }catch(err){
       errorResponse (res, 500, "Internal Server Error")
     }
   }
 
+  export const updateAdmin = async (req, res) => {
+    try{
+      const {username, email, password} = req.body
+      const hashedPassword = await bcrypt.hash(password, 10)
+      const upadteAdmin = await Admin.findByIdAndUpdate(
+        req.params.id,
+        {
+          username,
+          email,
+          password: hashedPassword,
+        },
+        {new: true}  
+      )
+      if(!upadteAdmin){
+        return errorResponse(res, 404, "Admin not found")
+      }
+      successResponse(res, 200, "Updating Admin Successfull", upadteAdmin)
+    }catch(err){
+      console.log(err)
+      errorResponse(res, 500, "Internal Server Error")
+    }
+  }
+
+export const deleteAdmin = async (req, res) => {
+  try{
+    const deleteAdmin = await Admin.findByIdAndDelete(req.params.id)
+    if(!deleteAdmin){
+      errorResponse(res, 404, 'Admin not found');
+    }
+    successResponse(res,200, "Admin deleted Successfully");
+    }catch(err){
+      console.log(err)
+      errorResponse(res, 500, "Internal Server Error")
+    }
+  }
+
+
 export const addLibrarian = async(req, res) => {
     try{
-      const {error, value} =validateLibrarian(req.body)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-        const {username, password, email, user_Type} = value
-        const librarian = new Librarian({username, password, email, user_Type})
+        const {username, password, email} = req.body
+        const librarian = new Librarian(username, password, email)
+        if(librarian){
+         return successResponse (res, 201, 'Librarian added successfully')
+        }else{
+        errorResponse (res, 404, 'Librarian creation failed')
+        }
         await librarian.save()
-        successResponse (res, 201, 'Librarian added successfully')
     }catch(err){
       console.log(err)
         errorResponse(res, 500, err.message)
@@ -85,17 +103,14 @@ export const addLibrarian = async(req, res) => {
 
 export const editLibrarian = async(req, res) => {
     try{
-      const {error, value} = validateLibrarian(req.body)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-        const {username, password, email } = value
+        const {username, password, email } = req.body
+        const hashedPassword = await bcrypt.hash(password, 10)
         const editLibrarian = await Librarian.findByIdAndUpdate(
             req.params.id,
             {
                 username,
-                password,
                 email,
+                password: hashedPassword,
             },
             {new: true}
         )
@@ -110,16 +125,12 @@ export const editLibrarian = async(req, res) => {
 
 export const getLibrarianDetails= async(req, res) =>{
     try{
-      const {error, value} = validateLibrarian(req.params)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-        const {librarianId} = value
-        const librarian = await Librarian.findById(librarianId)
+        const {librarianId} = req.params
+        const librarian = await Librarian.findById(librarianId).select("-password")
         if(!librarian){
-            res.json(librarian)
-        }else{
-            return errorResponse(res, 404, "Librarian not found")
+          return errorResponse(res, 404, "Librarian not found")
+        }else{ 
+          successResponse(res, 200, librarian)
         }
     }catch(error){
         errorResponse(res, 500, "Error in getting librarian details")
@@ -128,13 +139,12 @@ export const getLibrarianDetails= async(req, res) =>{
 
 export const deleteLibrarian = async(req, res) => {
     try {
-      const {error, value} = validateLibrarian(req.params)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-        const { librarianId } = value;
-        await Librarian.findByIdAndRemove(librarianId);
-        res.json({ message: 'Librarian deleted successfully' });
+        const { librarianId } = req.params;
+        const deleteLibrarian = await Librarian.findByIdAndRemove(librarianId);
+        if(!deleteLibrarian){
+          errorResponse(res, 404, "Librarian ID not found")
+        }
+        successResponse(res, 201, 'Librarian deleted successfully', );
       } catch (error) {
         errorResponse(res, 500, 'Error deleting librarian');
       }
@@ -142,11 +152,6 @@ export const deleteLibrarian = async(req, res) => {
 
 export const blockLibrarian = async(req, res) => {
     try {
-      // const {error, value} = validateLibrarian(req.params)
-      // if(error){
-      //   return errorResponse(res, 400, {error: error.details[0].message});
-      // }
-      //   const { librarianId } =value;
       const {librarianId} = req.params
         if (!librarianId) {
          return errorResponse(res, 400, 'Librarian ID is required');
@@ -155,15 +160,12 @@ export const blockLibrarian = async(req, res) => {
         if (!librarian) {
            return errorResponse(res, 404, 'Librarian not found');
         }
-
-        if (librarian.is_Blocked) {
+      if (librarian.is_Blocked) {
           return successResponse(res, 400, 'Librarian is already blocked');
         }
-  
         librarian.is_Blocked = true
         await librarian.save();
-  
-        res.json({ message: 'Librarian blocked successfully' });
+       successResponse(res, 200, 'Librarian blocked successfully');
       } catch (error) {
         console.log(error)
         errorResponse(res, 500, 'Error blocking librarian');
@@ -172,30 +174,21 @@ export const blockLibrarian = async(req, res) => {
 
 export const unblockLibrarian = async(req, res) => {
     try{
-      // const {error, value} = validateLibrarian(req.body)
-      // if(error){
-      //   return errorResponse(res, 400, {error: error.details[0].message});
-      // }
     const {librarianId}  = req.params;
-    console.log(librarianId)
     if (!librarianId) {
         return errorResponse(res, 400, 'Librarian ID is required');
     }
-
     const librarian = await Librarian.findById(librarianId);
     console.log(librarian)
     if (!librarian) {
        return errorResponse(res, 404, 'Librarian not found' );
     }
-
     if (!librarian.is_Blocked) {
         return successResponse(res, 400, 'Librarian is not blocked');
     }
-
     librarian.is_Blocked = false;
     await librarian.save();
-
-    res.json({ message: 'Librarian unblocked successfully' });
+    successResponse(res, 200,'Librarian unblocked successfully');
   } catch (error) {
     console.log(error)
     errorResponse(res, 500, 'Error unblocking librarian' );
@@ -204,15 +197,10 @@ export const unblockLibrarian = async(req, res) => {
 
 export const createLibrary = async(req, res ) =>{
     try{
-      const {error, value} = validateLibrary(req.body)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-        const {name, librarian} = value
+        const {name, librarian} = req.body
         const librarians = await Librarian.findById(librarian)
         if(librarians){
             const library = new Library({name: name, librarian: librarian})
-            
             await library.save()
            return successResponse(res, 201, 'Library created and librarian assigned successfully')
         }else {
@@ -223,32 +211,24 @@ export const createLibrary = async(req, res ) =>{
     }
 }
 
-// export const addLibrarianToLibrary = async(req, res) => {
-//     try {
-//       const {error, value} = validateLibrary(req.body)
-//       if(error){
-//         return errorResponse(res, 400, {error: error.details[0].message});
-//       }
-//         const { librarianId, libraryId } = value;
-//         const librarian = await Librarian.findById(librarianId);
-//         const library = await Library.findById(libraryId);
-//         if (!librarian || !library) {
-//             return errorResponse(res, 404, 'Librarian or library not found');
-//           }
-//           library.librarian.push(librarian);
-//           await library.save();
-//           res.json({ message: 'Librarian added to the library successfully' });
-//         } catch (error) {
-//             errorResponse(res, 500, 'Error in adding libraraian to library')
-// }
-// }
+export const listAllLibrary = async (req, res ) => {
+  try{
+      const allLibrary = await Library.find()
+      if(allLibrary.length === 0){
+       return errorResponse(res, 404, "No Library")
+      }
+      successResponse(res, 200, allLibrary)
+  }catch(error){
+      errorResponse(res, 500, "Error in listing library")
+  }
+}
 
 export const editLibrary = async (req, res ) =>{
     try {
         const { libraryId } = req.params;
         const { name, librarianId } = req.body;
-        await Library.findByIdAndUpdate(libraryId, { name, librarian: librarianId });
-        res.json({ message: 'Library details updated successfully' });
+        const updateLibrary = await Library.findByIdAndUpdate(libraryId, { name, librarian: librarianId });
+        successResponse(res, 201, 'Library details updated successfully', updateLibrary );
       } catch (error) {
         errorResponse(res, 500, 'Error updating library details');
       }
@@ -256,13 +236,12 @@ export const editLibrary = async (req, res ) =>{
 
 export const deleteLibrary = async (req, res ) =>{
     try {
-      const {error, value} = validateLibrary(req.params)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-      }
-        const { libraryId } = value;
-        await Library.findByIdAndRemove(libraryId);
-        res.json({ message: 'Library deleted successfully' });
+        const { libraryId } = req.params
+        const deleteLibrary = await Library.findByIdAndDelete(libraryId);
+        if(!deleteLibrary){
+          return errorResponse(res, 404, "Library ID is not found")
+        }
+        successResponse(res, 200, 'Library deleted successfully');
       } catch (error) {
         errorResponse(res, 500, 'Error deleting library');
       }
@@ -271,7 +250,10 @@ export const deleteLibrary = async (req, res ) =>{
 export const listUsers = async (req, res ) => {
     try{
         const users = await User.find().select("-password")
-        res.json(users)
+        if(users.length === 0){
+         return errorResponse(res, 404, "No users in list")
+        }
+        successResponse(res, 200, users)
     }catch(error){
         errorResponse(res, 500, "Error in listing users")
     }
@@ -283,20 +265,16 @@ export const blockUser = async(req, res) => {
         if (!userId) {
           return errorResponse(res, 400, 'User ID is required');
         }
-  
         const user = await User.findById(userId);
         if (!user) {
             return errorResponse(res, 404, 'User not found');
         }
-  
         if (user.is_Blocked) {
            return successResponse(res, 400, 'User is already blocked');
         }
-  
         user.is_Blocked = true;
         await user.save();
-  
-        res.json({ message: 'User blocked successfully' });
+        successResponse(res, 200,'User blocked successfully');
       } catch (error) {
         errorResponse(res, 500, 'Error blocking User');
       }
@@ -308,20 +286,16 @@ export const unblockUser = async(req, res) => {
     if (!userId) {
         return errorResponse(res, 400, 'User ID is required');
     }
-
     const user = await User.findById(userId);
     if (!user) {
        return errorResponse(res, 404, 'User not found' );
     }
-
     if (!user.is_Blocked) {
         return successResponse(res, 400, 'User is not blocked');
     }
-
     user.is_Blocked = false;
     await user.save();
-
-    res.json({ message: 'User unblocked successfully' });
+    successResponse(res, 200, 'User unblocked successfully');
   } catch (error) {
     errorResponse(res, 500, 'Error unblocking user' );
   }
@@ -329,18 +303,12 @@ export const unblockUser = async(req, res) => {
 
 export const getUserDetails = async(req, res) => {
     try {
-      // const {error, value} = validateUser(req.params)
-      // console.log(value)
-      // if(error){
-      //   return errorResponse(res, 400, {error: error.details[0].message});
-      // }
         const { userId } = req.params;
-       // console.log(userId)
         const user = await User.findById(userId).select("-password");
-        if (user) {
-          return res.json(user);
-        } else {
+        if (!user) {
           return errorResponse(res, 404, 'User not found' );
+        } else {
+          return successResponse(res, 200, user);
         }
       } catch (error) {
         errorResponse(res, 500, 'Error getting user details');
@@ -359,7 +327,7 @@ export const listUserHistory = async(req, res ) => {
                     returnDate: record.returnedDate
                 }
             })
-            res.json(formattedHistory)
+            return successResponse(res, 200, formattedHistory)
         }else{
             return errorResponse(res, 404, "No borrowing history found for this user")
         }
@@ -369,15 +337,11 @@ export const listUserHistory = async(req, res ) => {
 }
 
 export const uploadBookDetails = async(req, res) =>{
-    try {      
-    const {error, value} = validateBook(req.body)
-      if(error){
-        return errorResponse(res, 400, {error: error.details[0].message});
-     }
-        const { title, author, ISBN, category, copies, description } = value;
+    try {     
+        const { title, author, ISBN, category, copies, description } = req.body;
         const book = new Book({ title, author, ISBN, category, copies, description });
         await book.save();
-        successResponse (res,201, 'Book details uploaded successfully');
+        successResponse (res,201, 'Book details uploaded successfully', book);
       } catch (error) {
         console.log(error)
         errorResponse(res, 500, 'Error uploading book details');
@@ -400,7 +364,7 @@ export const editBookDetails = async(req, res) => {
       book.description = description
 
       await book.save()
-      res.json({message: "Book details upadted successfully"})
+      successResponse(res, 201, "Book details upadted successfully", book)
   }catch(err){
       errorResponse(res, 500, "Error updating book details")
   }
@@ -409,7 +373,10 @@ export const editBookDetails = async(req, res) => {
 export const listAllBooks = async(req, res ) => {
     try{
         const books = await Book.find()
-        res.json(books)
+        if(books.length === 0){
+          return errorResponse(res, 404, "No books in list")
+        }
+        successResponse(res, 200, books)
     }catch(err){
         errorResponse(res, 500, "Error in listing all books")
     }
@@ -420,7 +387,7 @@ export const getBookDetails= async(req, res) =>{
         const { bookId } = req.params;
         const book = await Book.findById(bookId);
         if (book) {
-          res.json(book);
+          return successResponse(res, 200, book)
         } else {
           return errorResponse(res, 404, 'Book not found');
         }
@@ -432,8 +399,11 @@ export const getBookDetails= async(req, res) =>{
 export const deleteBook = async(req, res ) => {
     try {
         const { bookId } = req.params;
-        await Book.findByIdAndRemove(bookId);
-        res.json({ message: 'Book deleted successfully' });
+        const deleteBook = await Book.findByIdAndDelete(bookId);
+        if(!deleteBook){
+          errorResponse(res, 404, "Book ID is not found")
+        }
+        successResponse(res, 200, 'Book deleted successfully');
       } catch (error) {
         return errorResponse(res, 500, 'Error deleting book');
       }

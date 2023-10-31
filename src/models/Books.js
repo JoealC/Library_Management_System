@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import Joi from 'joi';
 
 const bookSchema = new mongoose.Schema({
   title: {
@@ -38,30 +37,34 @@ const bookSchema = new mongoose.Schema({
     minlength: 1,
     maxlength: 1000, 
   },
-  user_Type:{
-    type: String
-  },
-  images: {
+  images: [{
     type: String,
+  }],
+  status:{
+    type:Number,
+    default: 1,
+  },
+  created_at:{
+    type: Date,
+    default: Date.now()
   }
 },
   {timestamps: true});
 
-const Book = mongoose.model('Book', bookSchema);
+const Book = mongoose.model('Book', bookSchema)
+export { Book }
 
-function validateBook(book) {
-  const schema = Joi.object({
-    title: Joi.string().min(1).max(255).required(),
-    author: Joi.string().min(1).max(255).required(),
-    ISBN: Joi.string().min(10).max(20).required(),
-    category: Joi.string().min(1).max(255).required(),
-    copies: Joi.number().min(1).max(1000).required(),
-    description: Joi.string().min(1).max(1000).required(),
-    user_Type: Joi.string()
-    //images: Joi.array().items(Joi.string()),
-  });
+// function validateBook(book) {
+//   const schema = Joi.object({
+//     title: Joi.string().min(1).max(255).required(),
+//     author: Joi.string().min(1).max(255).required(),
+//     ISBN: Joi.string().min(10).max(20).required(),
+//     category: Joi.string().min(1).max(255).required(),
+//     copies: Joi.number().min(1).max(1000).required(),
+//     description: Joi.string().min(1).max(1000).required(),
+//     user_Type: Joi.string()
+//     images: Joi.array().items(Joi.string()),
+//   });
+//   return schema.validate(book);
+// }
 
-  return schema.validate(book);
-}
-
-export { Book, validateBook };

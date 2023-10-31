@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import Joi from 'joi';
 
 const librarySchema = new mongoose.Schema({
   name: {
@@ -8,28 +7,32 @@ const librarySchema = new mongoose.Schema({
     minlength: 3,
     maxlength: 255,
   },
-  librarian:{
+  librarian:[{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Librarian',
     required: true,
-  },
+  }],
   status:{
     type:Number,
     default: 1,
+  },  
+  created_at:{
+    type: Date,
+    default: Date.now()
   }
-  
 },
 {timestamps: true});
 
-const Library = mongoose.model('Library', librarySchema);
+const Library = mongoose.model('Library', librarySchema)
+export { Library }
 
-function validateLibrary(library) {
-  const schema = Joi.object({
-    name: Joi.string().min(3).max(255).required(),
-    librarian: Joi.string().required(), 
-  });
+// function validateLibrary(library) {
+//   console.log(library)
+//   const schema = Joi.object({
+//     name: Joi.string().min(3).max(255),
+//     librarian: Joi.string(), 
+//   });
 
-  return schema.validate(library);
-}
+//   return schema.validate(library);
+// }
 
-export { Library, validateLibrary };
