@@ -52,7 +52,7 @@ export const loginAdmin = async(req, res) => {
     try{
       const {username, email, password} = req.body
       const hashedPassword = await bcrypt.hash(password, 10)
-      const upadteAdmin = await Admin.findByIdAndUpdate(
+      const updateAdmin = await Admin.findByIdAndUpdate(
         req.params.id,
         {
           username,
@@ -60,11 +60,11 @@ export const loginAdmin = async(req, res) => {
           password: hashedPassword,
         },
         {new: true}  
-      )
-      if(!upadteAdmin){
+      ).select("-password")
+      if(!updateAdmin){
         return errorResponse(res, 404, "Admin not found")
       }
-      successResponse(res, 200, "Updating Admin Successfull", upadteAdmin)
+      successResponse(res, 200, "Updating Admin Successfull", updateAdmin)
     }catch(err){
       console.log(err)
       errorResponse(res, 500, "Internal Server Error")
@@ -88,18 +88,22 @@ export const deleteAdmin = async (req, res) => {
 export const addLibrarian = async(req, res) => {
     try{
         const {username, password, email} = req.body
-        const librarian = new Librarian(username, password, email)
-        if(librarian){
-         return successResponse (res, 201, 'Librarian added successfully')
-        }else{
-        errorResponse (res, 404, 'Librarian creation failed')
+        const existingLibrarian = await Librarian.findOne({username})
+        if(existingLibrarian){
+          return errorResponse(res, 401, 'Librarian Already Exists')
         }
-        await librarian.save()
-    }catch(err){
-      console.log(err)
-        errorResponse(res, 500, err.message)
+        const hashedPassword =await bcrypt.hash(password, 10)
+        const newLibrarian = new Librarian({
+          username,
+          email,
+          password: hashedPassword,
+        })
+        await newLibrarian.save()
+        successResponse(res, 200, 'Librarian registered successfully')
+      }catch(err){
+        errorResponse (res,500,"Internal Server Error")
+      }
     }
-}
 
 export const editLibrarian = async(req, res) => {
     try{
@@ -113,11 +117,11 @@ export const editLibrarian = async(req, res) => {
                 password: hashedPassword,
             },
             {new: true}
-        )
+        ).select("-password")
         if(!editLibrarian){
             return errorResponse(res, 404, 'Librarian not found')
         }
-        successResponse(res, 200, ({editLibrarian}))
+        successResponse(res, 200, "Librarian edited successfully", editLibrarian)
     }catch(err){
         errorResponse(res, 500, 'Server error')
     }
@@ -179,7 +183,6 @@ export const unblockLibrarian = async(req, res) => {
         return errorResponse(res, 400, 'Librarian ID is required');
     }
     const librarian = await Librarian.findById(librarianId);
-    console.log(librarian)
     if (!librarian) {
        return errorResponse(res, 404, 'Librarian not found' );
     }
@@ -225,9 +228,9 @@ export const listAllLibrary = async (req, res ) => {
 
 export const editLibrary = async (req, res ) =>{
     try {
+      
         const { libraryId } = req.params;
-        const { name, librarianId } = req.body;
-        const updateLibrary = await Library.findByIdAndUpdate(libraryId, { name, librarian: librarianId });
+        const updateLibrary = await Library.findByIdAndUpdate(libraryId, req.body, { new : true });
         successResponse(res, 201, 'Library details updated successfully', updateLibrary );
       } catch (error) {
         errorResponse(res, 500, 'Error updating library details');

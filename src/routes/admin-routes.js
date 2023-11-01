@@ -12,8 +12,8 @@ const adminRoutes = Router()
 
 adminRoutes.post('/register', registerValidator, registerAdmin)
 adminRoutes.post('/login',loginValidator, loginAdmin)
-adminRoutes.put('/update-admin', authenticateAdmin, UpdateValidator, updateAdmin)
-adminRoutes.delete('/delete-admin', authenticateAdmin, deleteValidator, deleteAdmin)
+adminRoutes.put('/update-admin/:id', authenticateAdmin, UpdateValidator, updateAdmin)
+adminRoutes.delete('/delete-admin/:id', authenticateAdmin, deleteValidator, deleteAdmin)
 
 //Librarian
 
@@ -21,13 +21,13 @@ adminRoutes.post('/add-librarian', authenticateAdmin,adminAddLibrarianValidator,
 adminRoutes.put('/edit-librarian/:id', authenticateAdmin, adminEditLibrarianValidator, adminLibrarianIdValidator, editLibrarian)
 adminRoutes.get('/get-librarian/:librarianId', authenticateAdmin, getLibrarianDetails)
 adminRoutes.delete('/delete-librarian/:librarianId', authenticateAdmin, adminLibrarianIdValidator ,deleteLibrarian)
-adminRoutes.put('/block/librarian/:librarianId', authenticateAdmin,adminLibrarianIdValidator, blockLibrarian)
-adminRoutes.put('/unblock/librarian/:librarianId', authenticateAdmin,adminLibrarianIdValidator, unblockLibrarian)
+adminRoutes.put('/block/librarian/:librarianId', authenticateAdmin,blockLibrarian)
+adminRoutes.put('/unblock/librarian/:librarianId', authenticateAdmin,unblockLibrarian)
 
 //Library
 
 adminRoutes.post('/create-library', authenticateAdmin,createLibraryValidator, createLibrary)
-adminRoutes.put('/edit-library/:libraryId', authenticateAdmin,libraryIdValidator, editLibrary)
+adminRoutes.put('/edit-library/:libraryId', authenticateAdmin,createLibraryValidator,libraryIdValidator, editLibrary)
 adminRoutes.get('/listall-library-details', authenticateAdmin, listAllLibrary)
 adminRoutes.delete('/delete-library/:libraryId', authenticateAdmin,libraryIdValidator, deleteLibrary)
 
@@ -43,8 +43,8 @@ adminRoutes.get('/user/history/:userId', authenticateAdmin, listUserHistory)
 
 adminRoutes.post('/uploadbooks', authenticateAdmin,bookValidator, uploadBookDetails)
 adminRoutes.put('/edit-books/:bookId', authenticateAdmin,bookIdValidator, editBookDetails)
-adminRoutes.get('/lsit-books', listAllBooks)
-adminRoutes.get('/get-books/:bookId', getBookDetails)
+adminRoutes.get('/list-books', authenticateAdmin, listAllBooks)
+adminRoutes.get('/get-books/:bookId',authenticateAdmin, getBookDetails)
 adminRoutes.delete('/delete-books/:bookId', authenticateAdmin,bookIdValidator, deleteBook)
 
 

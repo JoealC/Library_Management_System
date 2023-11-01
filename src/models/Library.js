@@ -1,3 +1,4 @@
+import { array, string } from 'joi';
 import mongoose from 'mongoose';
 
 const librarySchema = new mongoose.Schema({
@@ -10,7 +11,6 @@ const librarySchema = new mongoose.Schema({
   librarian:[{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Librarian',
-    required: true,
   }],
   status:{
     type:Number,

@@ -9,7 +9,7 @@ config()
 
 export const registerUser = async(req, res) =>{
     try{
-      const{ username, email, password, user_Type} = req.body
+      const{ username, email, password} = req.body
       const existingUser = await User.findOne({username})
       if(existingUser){
         return errorResponse(res, 401, 'User Already Exists')
@@ -19,7 +19,6 @@ export const registerUser = async(req, res) =>{
         username,
         email,
         password: hashedPassword,
-        user_Type,
       })
       await newUser.save()
       successResponse(res, 200, 'User registered successfully')
@@ -30,8 +29,8 @@ export const registerUser = async(req, res) =>{
 
   export const loginUser = async(req, res) => {
     try{
-      const {username, password} = req.body
-      const user = await User.findOne(username)
+      const {email, password} = req.body
+      const user = await User.findOne({email})
       if(!user){
         return errorResponse (res, 401, "Authentication failed")
       }
@@ -39,7 +38,7 @@ export const registerUser = async(req, res) =>{
       if(!passwordMatch){
         return errorResponse(res, 401, "Invalid Password")
       }
-      const token = sign({objectId: user._id, username: user.username, user_Type: user.user_Type}, process.env.SECRET_KEY, {expiresIn:'1d'})
+      const token = sign({objectId: user._id, username: user.username}, process.env.SECRET_KEY, {expiresIn:'1d'})
       successResponse(res, 200, ({token}))
     }catch(err){
       errorResponse (res, 500, "Internal Server Error")
@@ -50,7 +49,7 @@ export const registerUser = async(req, res) =>{
     try{
       const {username, email, password} = req.body
       const hashedPassword = await bcrypt.hash(password, 10)
-      const upadteUser = await User.findByIdAndUpdate(
+      const updateUser = await User.findByIdAndUpdate(
         req.params.id,
         {
           username,
@@ -58,11 +57,11 @@ export const registerUser = async(req, res) =>{
           password: hashedPassword,
         },
         {new: true}  
-      )
-      if(!upadteUser){
-        errorResponse(res, 404, "Admin not found")
+      ).select("-password")
+      if(!updateUser){
+       return errorResponse(res, 404, "User not found")
       }
-      successResponse(res, 200, "Updating Admin Successfull", upadteUser)
+      successResponse(res, 200, "Updating User Successfull", updateUser)
     }catch(err){
       console.log(err)
       errorResponse(res, 500, "Internal Server Error")

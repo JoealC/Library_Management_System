@@ -14,7 +14,7 @@ export const authenticateAdmin = async(req, res, next) => {
   try{
     const decoded = jwt.verify(token, process.env.SECRET_KEY)
     const adminId = await Admin.findById(decoded.objectId)
-    if(adminId === "null"){
+    if(adminId === null){
        return errorResponse(res, 403, 'Forbidden. Admin access required')
     }
     req.user = decoded
@@ -33,7 +33,7 @@ export const authenticateLibrarian = async(req, res, next) => {
     try{
       const decoded = jwt.verify(token, process.env.SECRET_KEY)
       const librarianId = await Librarian.findById(decoded.objectId)
-      if(librarianId !== 'null'){
+      if(librarianId === null){
          return errorResponse(res, 403, 'Forbidden. Librarian access required')
       }
       req.user = decoded
@@ -44,14 +44,14 @@ export const authenticateLibrarian = async(req, res, next) => {
   }
 
   export const authenticateUser = async(req, res, next) => {
-    const token = req.header('Authorization');
+    const token = req.header('Authorization')
     if (!token) {
      return errorResponse (res,401, 'Unauthorized');
     }
     try{
       const decoded = jwt.verify(token, process.env.SECRET_KEY)
-      const userId = await User.findById(decode.objectId)
-      if(userId !== 'null'){
+      const userId = await User.findById(decoded.objectId)
+      if(userId === null){
          return errorResponse(res, 403, 'Forbidden. User access required')
       }
       req.user = decoded

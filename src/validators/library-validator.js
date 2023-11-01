@@ -3,7 +3,7 @@ import { errorResponse } from "../middleware/response";
 import { idValidator } from "./param-validator";
 
 const libraryValidator = Joi.object({
-    name: Joi.array().min(3).max(255),
+    name: Joi.string().min(3).max(255),
     librarian: Joi.array(),
 })
 
@@ -22,7 +22,7 @@ export const createLibraryValidator = (req, res, next) => {
 
 export const libraryIdValidator = async(req, res, next) => {
     try{
-        if((await idValidator(req.params.id)) == true){
+        if((await idValidator(req.params.libraryId)) == true){
             next()
         }else{
             return errorResponse(res, 400, "Invalid class ID")

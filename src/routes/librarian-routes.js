@@ -7,15 +7,14 @@ import { loginValidator } from "../validators/login-validator";
 import { librarianIdValidator, librarianRegisterValidator } from "../validators/librarian-validator";
 import { userIdValidator } from "../validators/user-validator";
 import { bookIdValidator, bookValidator } from "../validators/book-validator";
-import { filterBookValidator } from "../validators/filter-book-validator";
 
 const librarianRoutes = Router()
 
 //registration and login
 librarianRoutes.post('/register',librarianRegisterValidator,  registerLibrarian),
 librarianRoutes.post('/login',loginValidator, loginLibrarian)
-librarianRoutes.put('/update-librarian', authenticateLibrarian, UpdateValidator, updateLibrarian)
-librarianRoutes.delete('/delete-librarian', authenticateLibrarian,librarianIdValidator, deleteLibrarian)
+librarianRoutes.put('/update-librarian/:id', authenticateLibrarian, UpdateValidator, updateLibrarian)
+librarianRoutes.delete('/delete-librarian/:id', authenticateLibrarian,librarianIdValidator, deleteLibrarian)
 
 //User
 librarianRoutes.get('/listusers', authenticateLibrarian, listUsers);
@@ -31,9 +30,9 @@ librarianRoutes.get('/list-books', authenticateLibrarian, listAllBooks);
 librarianRoutes.get('/book-details/:bookId', authenticateLibrarian, getBookDetails);
 librarianRoutes.delete('/delete-book/:bookId', authenticateLibrarian, bookIdValidator, deleteBook);
 librarianRoutes.put('/approve-borrow', authenticateLibrarian, approveBorrowRequest );
-librarianRoutes.get('/filter-books', authenticateLibrarian,filterBookValidator, filterBooks);
+librarianRoutes.get('/filter-books', authenticateLibrarian, filterBooks);
 librarianRoutes.put('/set-due-date', authenticateLibrarian, setDueDate);
 librarianRoutes.post('/notify-users/:bookId', authenticateLibrarian, notifyUser);
-librarianRoutes.get('/find-users-by-book/:bookId', authenticateLibrarian,bookIdValidator, findUserByBookID)
+librarianRoutes.get('/find-user-by-book/:bookId', authenticateLibrarian,bookIdValidator, findUserByBookID)
 
 export default librarianRoutes

@@ -2,7 +2,7 @@ import { idValidator } from "./param-validator"
 
 export const userIdValidator = async(req, res, next) => {
     try{
-        if((await idValidator(req.params.id)) == true){
+        if((await idValidator(req.params.userId)) == true){
             next()
         }else{
             return errorResponse(res, 400, "Invalid class ID")

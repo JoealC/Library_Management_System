@@ -32,8 +32,8 @@ export const registerLibrarian = async(req, res) =>{
 
 export const loginLibrarian = async(req, res) => {
   try{
-    const {username, email, password} = req.body
-    const librarian = await Librarian.findOne({username, email})
+    const {email, password} = req.body
+    const librarian = await Librarian.findOne({email})
     if(!librarian){
       return errorResponse (res, 401, "Authentication failed")
     }
@@ -41,7 +41,7 @@ export const loginLibrarian = async(req, res) => {
     if(!passwordMatch){
       return errorResponse(res, 401, "Invalid Password")
     }
-    const token = sign({objectId: librarian._id, username: librarian.username, user_Type: librarian.user_Type}, process.env.SECRET_KEY, {expiresIn:'1d'})
+    const token = sign({objectId: librarian._id, username: librarian.username}, process.env.SECRET_KEY, {expiresIn:'1d'})
     successResponse(res, 200, ({token}))
   }catch(err){
     errorResponse (res, 500, "Internal Server Error")
@@ -52,7 +52,7 @@ export const updateLibrarian = async (req, res) => {
   try{
     const {username, email, password} = req.body
     const hashedPassword = await bcrypt.hash(password, 10)
-    const upadteLibrarian = await Librarian.findByIdAndUpdate(
+    const updateLibrarian = await Librarian.findByIdAndUpdate(
       req.params.id,
       {
         username,
@@ -60,11 +60,11 @@ export const updateLibrarian = async (req, res) => {
         password: hashedPassword,
       },
       {new: true}  
-    )
-    if(!upadteLibrarian){
-      errorResponse(res, 404, "Admin not found")
+    ).select("-password")
+    if(!updateLibrarian){
+      return errorResponse(res, 404, "librarian not found")
     }
-    successResponse(res, 200, "Updating Admin Successfull", upadteLibrarian)
+    successResponse(res, 200, "Updating Librarian Successfull", updateLibrarian)
   }catch(err){
     console.log(err)
     errorResponse(res, 500, "Internal Server Error")
@@ -177,7 +177,7 @@ export const listUserHistory = async(req, res ) => {
 export const uploadBookDetails = async (req, res ) =>{
   try{
       const { title, author, ISBN, category, copies, description } = req.body
-      const images = req.file.map((file) => file.filename)
+      const images = req.file
       const book = new Book({title, author, ISBN, category, copies, description, images})
       await book.save()
       successResponse(res, 201, "Book details uploaded successfully")
@@ -190,6 +190,7 @@ export const uploadBookDetails = async (req, res ) =>{
 export const editBookDetails = async(req, res) => {
   try{
       const{bookId} = req.params
+      const images = req.file
       const{title, author, ISBN, category, copies, description}= req.body
       const book = await Book.findById(bookId)
       if(!book){
@@ -200,7 +201,8 @@ export const editBookDetails = async(req, res) => {
       book.ISBN = ISBN,
       book.category = category,
       book.copies = copies,
-      book.description = description
+      book.description = description,
+      book.images = images
       await book.save()
       res.json({message: "Book details upadted successfully"})
   }catch(err){
@@ -265,6 +267,7 @@ export const approveBorrowRequest = async(req, res) => {
 export const filterBooks = async(req, res) => {
     try{
         const{title, author, category} = req.body
+        const fileredBooks = await Book.find(filter)
         const filter ={}
         if(title) {
             filter.title = title
@@ -275,8 +278,8 @@ export const filterBooks = async(req, res) => {
         if(category){
             filter.category = category
         }
-        const fileredBooks = await Book.find(filter)
-        successResponse(res, 200, fileredBooks)
+        
+        successResponse(res, 200, "Filtering books successfull", fileredBooks)
     }catch(error){
         errorResponse(res, 500, 'Error in filtering books')
     }

@@ -28,7 +28,7 @@ export const bookValidator = (req, res, next) => {
 
 export const bookIdValidator = async(req, res, next) => {
     try{
-        if((await idValidator(req.params.id)) == true){
+        if((await idValidator(req.params.bookId)) == true){
             next()
         }else{
             return errorResponse(res, 400, "Invalid class ID")
